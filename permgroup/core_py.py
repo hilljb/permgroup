@@ -1,6 +1,26 @@
 #!/usr/bin/python
 
-# Core python code for constructing permutations and permutation groups
+__author__ = "Jason B. Hill (jason@jasonbhill.com)"
+__copyright__ = "Copyright 2016, Jason B. Hill"
+__license__ = "GPLv3.0 (https://www.gnu.org/licenses/gpl-3.0.en.html)"
+__version__ = "0.1.0"
+__notes__ = """
+Provides the underlying Python code to turn lists of tuples into permutations.
+
+methods:
+
+    _verify_tuples_ - verifies that an action is a list of tuples of positive integers.
+
+    _has_unique_points_ - verifies that not point is repeated in an action.
+
+    _get_max_support_ - returns the maximum integer in the support of an action.
+
+    _get_degree_ - returns the number of points in the support of an action.
+
+    _is_identity_action - returns True if the action is trivial.
+
+    _make_map_ - forms a Python list representing the action.
+"""
 
 
 def _verify_tuples_(action):
@@ -96,6 +116,37 @@ def _get_max_support_(action):
     return m
 
 
+def _get_degree_(action):
+    """
+    From a (verified) action, find the degree.
+
+    The degree of a permutation is the size of the support of the action.
+
+    INPUT:
+        action (list) - a (verified) list of tuples of positive integers.
+
+    OUTPUT:
+        int - an integer representing the size of the support of the action.
+
+    EXAMPLES/TESTS:
+    >>> P = [(1,2)]
+    >>> _get_degree_(P)
+    2
+    >>> P = [(1,8)]
+    >>> _get_degree_(P)
+    8
+    >>> P = [(1,5),(4,7)]
+    >>> _get_degree_(P)
+    7
+    """
+    max_support = 0
+    for t in action:
+        for pnt in t:
+            if pnt > max_support:
+                max_support = pnt
+    return max_support
+
+
 def _is_identity_action_(action):
     """
     Determines if `action` represents the identity permutation.
@@ -137,10 +188,10 @@ def _make_map_(action):
     EXAMPLES/TESTS:
     >>> P = [(1,2,3,6)]
     >>> _make_map_(P)
-    [0, 2, 3, 6, 4, 5, 1]
+    [6, 2, 3, 6, 4, 5, 1]
     >>> P = [(1,2),(3,4)]
     >>> _make_map_(P)
-    [0, 2, 1, 4, 3]
+    [4, 2, 1, 4, 3]
     >>> P = [()]
     >>> _make_map_(P)
     [0]
@@ -151,9 +202,8 @@ def _make_map_(action):
     # Otherwise, compute the map
     max_support = _get_max_support_(action)
     L = range(max_support + 1)
+    L[0] = max_support
     for t in action:
         for i in range(len(t)):
             L[t[i]] = t[(i + 1) % len(t)]
     return L
-    
-

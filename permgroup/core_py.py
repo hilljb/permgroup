@@ -46,8 +46,13 @@ def _verify_tuples_(action):
     >>> P = [()]
     >>> _verify_tuples_(P)
     True
+    >>> P = []
+    >>> _verify_tuples_(P)
+    False
     """
     if not isinstance(action, list):
+        return False
+    if len(action) == 0:
         return False
     if not all(isinstance(t, tuple) for t in action):
         return False
@@ -134,17 +139,19 @@ def _get_degree_(action):
     2
     >>> P = [(1,8)]
     >>> _get_degree_(P)
-    8
+    2
     >>> P = [(1,5),(4,7)]
     >>> _get_degree_(P)
-    7
+    4
+    >>> P = [()]
+    >>> _get_degree_(P)
+    0
     """
-    max_support = 0
+    degree = 0
     for t in action:
         for pnt in t:
-            if pnt > max_support:
-                max_support = pnt
-    return max_support
+            degree += 1
+    return degree
 
 
 def _is_identity_action_(action):

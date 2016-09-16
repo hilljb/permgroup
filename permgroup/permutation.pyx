@@ -9,12 +9,20 @@ from libc.stdint cimport uint32_t
 import core_py
 
 
+
+cdef struct s_cycle_link:
+    uint32_t *points
+    uint32_t length
+    s_cycle_link *next
+ctypedef s_cycle_link cycle_link
+
+
+
 cdef class Permutation(object):
 
     cdef uint32_t *permutation
     cdef uint32_t *support
-    cdef uint32_t **cycles
-    cdef uint32_t *cycle_lengths
+    cdef cycle_link *cycles
     cdef uint32_t num_cycles
     cdef public uint32_t max_support
     cdef public uint32_t degree
@@ -57,13 +65,15 @@ cdef class Permutation(object):
             i += 1
 
         # Compute cycle information
-        cdef bint *support_flags = <bint *>calloc((self.max_support+1), sizeof(bint))
-        
+        #cdef bint *support_flags = <bint *>calloc((self.max_support+1), sizeof(bint))
+
+        print "The image of 1 is %s" % self.permutation[1]
+        print "The cycle length of 1 is %s" % self.get_cycle_length(1)
 
 
     def __dealloc__(self):
         """
-        Ddeconstruct the class and free C memory objects.
+        Deconstruct the class and free C memory objects.
         """
         free(self.permutation)
         free(self.support)
@@ -87,20 +97,13 @@ cdef class Permutation(object):
         """
         Returns the cycle length of the cycle starting at point pnt.
         """
-        cdef uint32_t image = self.get_image(pnt)
+        cdef uint32_t image = self.permutation[pnt]
         cdef uint32_t length = 1
 
         while image != pnt:
             length += 1
-            image = self.get_image(image)
+            image = self.permutation[image]
         return length
-
-
-    cdef uint32_t get_image(self, uint32_t pnt):
-        """
-        Returns the image of a point under the permutation.
-        """
-        return self.permutation[pnt]
 
 
     cdef uint32_t * get_cycle(self, uint32_t pnt):
@@ -116,17 +119,27 @@ cdef class Permutation(object):
         while i < length:
             cycle[i] = image
             i += 1
-            image = self.get_image(image)
-        return cycle       
+            image = self.permutation[image]
+        return cycle
 
 
-"""
-    cpdef support(self):
-        cdef uint32_t i = 0
-        L = []
-        while i < self.degree:
-            L.append(self.support[i])
+    cdef cycle_link *_make_cycles_(self):
+        """
+        Computes the cycles of the permutation.
+        """
+        cdef uint32_t i=1
+        # Make a bint list of of all points in the domain, all set to 0 (not yet checked)
+        cdef bint *domain_flags = <bint *>calloc((self.max_support+1), sizeof(bint))
+        # Turn all points in the bint list not in the support to 1 (no need to check them)
+        while i < self.max_support:
+            if self.permutation[i] == i:
+                domain_flags[i] = 1
             i += 1
-        return L
-"""
+
+
+
+
+
+
+
 

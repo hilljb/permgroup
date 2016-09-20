@@ -9,14 +9,74 @@ from libc.stdint cimport uint32_t
 import core_py
 
 
+###################################################################################################
+# Cycle storage objects and functions                                                             #
+###################################################################################################
 
-cdef struct s_cycle_link:
-    uint32_t *points
-    uint32_t length
-    s_cycle_link *next
-ctypedef s_cycle_link cycle_link
+cdef struct cycles_s:
+    """
+    A C struct to store cycle information for permutations.
+
+    The cycles themselves are stored as a C-list of C-lists of integers. The cycle lengths are then
+    stored as a C-list of integers.
+    """
+    uint32_t **cycles
+    uint32_t *cycle_lengths
+ctypedef cycles_s cycles
 
 
+cdef uint32_t get_cycle_length(uint32_t *permutation, uint32_t pnt):
+    """
+    Returns the cycle length of the cycle starting at point pnt in permutation.
+
+    There is no error checking to ensure that permutation is well-formed or well-allocated.
+    """
+    # Get the initial image of pnt and set initial cycle length to 1.
+    cdef uint32_t image = permutation[pnt]
+    cdef uint32_t length = 1
+
+    # Iterate until pnt is reached again in the cycle.
+    while image != pnt:
+        length += 1
+        image = permutation[image]
+
+    return length
+
+
+cdef uint32_t *get_cycle(uint32_t *permutation, uint32_t pnt):
+    """
+    Returns a C-list representing the cycle starting at point pnt in permutation.
+
+    There is no error checking to ensure that permutation is well-formed or well-allocated.
+    """
+    cdef uint32_t length
+    cdef uint32_t image = pnt
+    cdef uint32_t *cycle
+    cdef uint32_t i = 0
+
+    # Get the cycle length.
+    length = get_cycle_length(permutation, pnt)
+
+    # Allocate the cycle.
+    cycle = <uint32_t *>malloc(length*sizeof(uint32_t))
+
+    # Store the cycle.
+    while i < length:
+        cycle[i] = image
+        i += 1
+        image = permutation[image]
+
+    return cycle
+
+
+
+
+
+
+
+###################################################################################################
+# The base permutation class                                                                      #
+###################################################################################################
 
 cdef class Permutation(object):
 
@@ -64,12 +124,6 @@ cdef class Permutation(object):
                 j += 1
             i += 1
 
-        # Compute cycle information
-        #cdef bint *support_flags = <bint *>calloc((self.max_support+1), sizeof(bint))
-
-        print "The image of 1 is %s" % self.permutation[1]
-        print "The cycle length of 1 is %s" % self.get_cycle_length(1)
-
 
     def __dealloc__(self):
         """
@@ -93,17 +147,11 @@ cdef class Permutation(object):
         return "str string"
 
 
-    cdef uint32_t get_cycle_length(self, uint32_t pnt):
-        """
-        Returns the cycle length of the cycle starting at point pnt.
-        """
-        cdef uint32_t image = self.permutation[pnt]
-        cdef uint32_t length = 1
 
-        while image != pnt:
-            length += 1
-            image = self.permutation[image]
-        return length
+
+
+
+
 
 
     cdef uint32_t * get_cycle(self, uint32_t pnt):
